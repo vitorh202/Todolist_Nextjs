@@ -1,0 +1,8 @@
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5) sepia(1) saturate(1000%) hue-rotate(100deg);
+  }
+  
+  /* Para o Firefox */
+  input[type="date"] {
+    accent-color: #4ade80; /* Cor verde do Tailwind */
+  }
