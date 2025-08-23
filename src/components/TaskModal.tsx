@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type NewTask = {
   title: string;
@@ -9,27 +9,59 @@ type NewTask = {
   date: string; // yyyy-mm-dd
 };
 
+type TaskForEdit = {
+  id: string;
+  title: string;
+  description: string;
+  priority: "baixa" | "media" | "alta";
+  date: string;
+};
+
 type TaskModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: NewTask) => void; // <- usa onSave
+  onSave: (task: NewTask) => void;
+  initialTask?: TaskForEdit | null; 
 };
 
-export default function TaskModal({ isOpen, onClose, onSave }: TaskModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<NewTask["priority"]>("media");
-  const [date, setDate] = useState("");
+export default function TaskModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialTask,
+}: TaskModalProps) {
+  const [title, setTitle] = useState(initialTask?.title || "");
+  const [description, setDescription] = useState(initialTask?.description || "");
+  const [date, setDate] = useState(initialTask?.date || "");
+  const [priority, setPriority] = useState<NewTask["priority"]>(
+    initialTask?.priority || "media"
+  );
+
+  // quando abrir o modal ou trocar a tarefa a editar, sincroniza os campos
+  useEffect(() => {
+    if (initialTask) {
+      setTitle(initialTask.title);
+      setDescription(initialTask.description);
+      setDate(initialTask.date);
+      setPriority(initialTask.priority);
+    } else {
+      setTitle("");
+      setDescription("");
+      setDate("");
+      setPriority("media");
+    }
+  }, [initialTask, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString("en-CA", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
     if (!title.trim()) {
       alert("Digite um título para a tarefa!");
       return;
@@ -39,10 +71,13 @@ export default function TaskModal({ isOpen, onClose, onSave }: TaskModalProps) {
       return;
     }
     if (date < formattedDate) {
-        alert("Você não pode selecionar uma data anterior a hoje!");
-        return;
-      }
-    onSave({ title, description, priority, date });
+      alert("Você não pode selecionar uma data anterior a hoje!");
+      return;
+    }
+
+    // Envia apenas os campos editáveis; o pai decide id/done/merge
+    onSave({ title, description, date, priority });
+
     // limpa e fecha
     setTitle("");
     setDescription("");
@@ -60,15 +95,14 @@ export default function TaskModal({ isOpen, onClose, onSave }: TaskModalProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      onClick={handleClose} // fecha ao clicar fora
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={handleClose}>
       <div
         className="w-full max-w-md rounded-xl border border-green-500/40 bg-gray-900 p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()} // impede fechar ao clicar dentro
+        onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-xl font-bold text-green-400">Nova Tarefa</h2>
+        <h2 className="mb-4 text-xl font-bold text-green-400">
+          {initialTask ? "Editar Tarefa" : "Nova Tarefa"}
+        </h2>
 
         <label className="mb-3 block">
           <span className="text-sm text-green-300">Título</span>
@@ -108,9 +142,7 @@ export default function TaskModal({ isOpen, onClose, onSave }: TaskModalProps) {
             <select
               className="mt-1 w-full rounded-lg border border-green-500/40 bg-black/70 p-2 text-green-200 outline-none focus:ring-2 focus:ring-green-400"
               value={priority}
-              onChange={(e) =>
-                setPriority(e.target.value as NewTask["priority"])
-              }
+              onChange={(e) => setPriority(e.target.value as NewTask["priority"])}
             >
               <option value="baixa">Baixa</option>
               <option value="media">Média</option>
@@ -130,7 +162,7 @@ export default function TaskModal({ isOpen, onClose, onSave }: TaskModalProps) {
             onClick={handleSave}
             className="rounded-lg bg-green-600 px-4 py-2 font-bold text-black shadow-[0_0_10px_#00ff88] transition hover:bg-green-400"
           >
-            Salvar
+            {initialTask ? "Salvar Alterações" : "Adicionar Tarefa"}
           </button>
         </div>
       </div>

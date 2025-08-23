@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "@/styles/input-styles.css";
 import TaskModal from "@/components/TaskModal";
 
 // Modelo de tarefa
 type Task = {
+  id: string;
   title: string;
   description: string;
   priority: "baixa" | "media" | "alta";
@@ -16,10 +17,13 @@ type Task = {
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
-  const addTask = (task: Omit<Task, "done">) => {
-    setTasks([...tasks, { ...task, done: false }]);
-  };
+  const makeId = () =>
+  (typeof crypto !== "undefined" && "randomUUID" in crypto)
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const formatDateForDisplay = (inputDate: string) => {
     if (!inputDate) return "";
@@ -50,6 +54,24 @@ export default function Home() {
     setExpandedTaskKey(expandedTaskKey === key ? null : key);
   };
 
+    // Carregar do localStorage ao iniciar
+    useEffect(() => {
+      const stored = localStorage.getItem("tasks");
+      if (stored) {
+        const parsed: Task[] = JSON.parse(stored) as Task[]; // <-- define o tipo
+        const tasksWithDone: Task[] = parsed.map((t: Task) => ({
+          ...t,
+          done: t.done ?? false
+        }));
+        setTasks(tasksWithDone);
+      }
+    }, []);
+
+    // Salvar no localStorage sempre que as tarefas mudarem
+    useEffect(() => {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }, [tasks]);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-green-950 text-green-200 font-mono">
       {/* AppBar */}
@@ -72,7 +94,7 @@ export default function Home() {
       <div className="pt-20 flex flex-col items-center px-4 min-h-screen items-center justify-center">
         {/* BOTÃO abrir modal */}
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsAdding(true)}
           className="mb-6 bg-green-600 text-black px-6 py-2 rounded-lg font-bold hover:bg-green-400 transition shadow-[0_0_10px_#00ff88]"
         >
           + Nova Tarefa
@@ -80,9 +102,30 @@ export default function Home() {
 
         {/* Modal */}
         <TaskModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={addTask}
+          isOpen={isAdding || !!editingTask}
+          onClose={() => {
+            setIsAdding(false);
+            setEditingTask(null);
+          }}
+          initialTask={editingTask || undefined}
+          onSave={(updated) => {
+            if (editingTask) {
+              // Edição
+              setTasks(prev =>
+                prev.map(task =>
+                  task.id === editingTask.id ? { ...task, ...updated } : task
+                )
+              );
+            } else {
+              // Adição
+              setTasks(prev => [
+                ...prev,
+                { ...updated, id: Date.now().toString(), done: false }
+              ]);
+            }
+            setIsAdding(false);
+            setEditingTask(null);
+          }}
         />
 
         {/* HOJE */}
@@ -129,11 +172,11 @@ export default function Home() {
           <ul className="space-y-3">
 
           {todayTasks.map((t) => {
-            const key = `${t.date}|${t.title}`; // chave única
+            const key = `${t.date}|${t.title}`; 
 
             return (
               <li
-                key={key}
+              key={key}
                 className="bg-black/60 p-3 rounded-lg border border-green-500/40 hover:shadow-[0_0_10px_#00ff88]"
               >
                 {/* Header da tarefa */}
@@ -175,6 +218,15 @@ export default function Home() {
                       {t.priority}
                     </span>
                   </div>
+                  
+                  <div className="flex gap-2">
+                  {/* Botão de editar */}
+                  <button
+                    onClick={() => setEditingTask(t)}
+                    className="text-blue-400 hover:text-blue-300"
+                  >
+                    ✏️
+                  </button>
 
                   {/* Botão excluir */}
                   <button
@@ -185,6 +237,7 @@ export default function Home() {
                   >
                     ✕
                   </button>
+                  </div>
                 </div>
 
                 {/* Detalhes expandíveis */}
@@ -258,12 +311,21 @@ export default function Home() {
                     </span>
                   </div>
 
+                        <div className="flex gap-2">
+                        {/* Botão de editar */}
+                        <button
+                          onClick={() => setEditingTask(t)}
+                          className="text-blue-400 hover:text-blue-300"
+                        >
+                          ✏️
+                        </button>
                         <button
                           onClick={() => setTasks(tasks.filter((x) => x !== t))}
                           className="text-red-400 hover:text-red-600 font-bold"
                         >
                           ✕
                         </button>
+                        </div>
                       </div>
 
                       {/* Expansão */}
