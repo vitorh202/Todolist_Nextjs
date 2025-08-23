@@ -14,16 +14,26 @@ type Task = {
   date: string; // formato yyyy-mm-dd
 };
 
+type Theme = "light" | "pink" | "dark" | "terminal";
+const THEME_KEY = "theme";
+
+const normalizeTheme = (v: string | null): Theme => {
+  if (!v) return "light";
+  const t = v.toLowerCase();
+  if (t === "pink") return "pink";
+  if (t === "dark") return "dark";
+  if (t === "terminal") return "terminal";
+  return "light";
+};
+
 export default function Home() {
+  const [theme, setTheme] = useState<Theme>(() =>
+  normalizeTheme(typeof window !== "undefined" ? localStorage.getItem(THEME_KEY) : null));
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
-  const makeId = () =>
-  (typeof crypto !== "undefined" && "randomUUID" in crypto)
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 
   const formatDateForDisplay = (inputDate: string) => {
     if (!inputDate) return "";
@@ -67,24 +77,30 @@ export default function Home() {
       }
     }, []);
 
+    useEffect(() => {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(THEME_KEY, theme);
+    }, [theme]);
+
     // Salvar no localStorage sempre que as tarefas mudarem
     useEffect(() => {
       localStorage.setItem("tasks", JSON.stringify(tasks));
     }, [tasks]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-green-950 text-green-200 font-mono">
+    <main className="min-h-screen bg-theme transition-colors duration-300 font-mono text-[var(--text-color)]">
       {/* AppBar */}
-      <header className="w-full bg-black/90 border-b border-green-500/40 p-4 shadow-[0_0_15px_#00ff88] fixed top-0 left-0">
+      <header className="w-full fixed top-0 left-0 header-theme p-2 z-30">
         <div className="flex items-center">
           <div className="flex-1"></div>
-          <h1 className="text-2xl font-bold text-green-400">
-            🖥️ Lista de Tarefas
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--primary-color)]">🖥️ Lista de Tarefas</h1>
           <p className="font-bold text-white-400 flex-1 text-right">
             Estilo:
-            <select className="bg-black ml-2">
-              <option value="Terminal">Terminal</option>
+            <select className="ml-2 rounded px-2 py-1 bg-[var(--card-bg)] border" onChange={(e) => setTheme(normalizeTheme(e.target.value))} value={theme}>
+              <option value="light">Light</option>
+              <option value="pink">Pink</option>
+              <option value="dark">Dark</option>
+              <option value="terminal">Terminal</option>
             </select>
           </p>
         </div>
@@ -95,7 +111,7 @@ export default function Home() {
         {/* BOTÃO abrir modal */}
         <button
           onClick={() => setIsAdding(true)}
-          className="mb-6 bg-green-600 text-black px-6 py-2 rounded-lg font-bold hover:bg-green-400 transition shadow-[0_0_10px_#00ff88]"
+          className="mb-6 px-6 py-2 rounded-lg font-bold btn-theme"
         >
           + Nova Tarefa
         </button>
@@ -129,8 +145,8 @@ export default function Home() {
         />
 
         {/* HOJE */}
-        <div className="w-full max-w-2xl bg-black/70 border border-green-500/30 rounded-2xl p-6 mb-10 shadow-[0_0_15px_#00ff88]">
-          <h2 className="text-xl text-green-400 font-bold mb-4">
+        <div className="w-full max-w-2xl border border-theme rounded-2xl p-6 mb-10 bg-card shadow-theme">
+          <h2 className="text-xl text-[var(--primary-color)] font-bold mb-4">
             📅 Tarefas de Hoje
           </h2>
 
@@ -150,7 +166,7 @@ export default function Home() {
                   cx="40"
                   cy="40"
                   r="35"
-                  stroke="#00ff88"
+                  stroke="var(--primary-color)"
                   strokeWidth="5"
                   fill="transparent"
                   strokeDasharray={2 * Math.PI * 35}
@@ -158,11 +174,11 @@ export default function Home() {
                   className="transition-all duration-500"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-green-400 text-sm font-bold">
+              <span className="absolute inset-0 flex items-center justify-center text-[var(--primary-color)] text-sm font-bold">
                 {completedToday}/{todayTasks.length}
               </span>
             </div>
-            <p className="text-green-300">
+            <p className="text-[var(--primary-color)]">
               Progresso de hoje:{" "}
               <span className="font-bold">{Math.round(progress)}%</span>
             </p>
@@ -177,7 +193,7 @@ export default function Home() {
             return (
               <li
               key={key}
-                className="bg-black/60 p-3 rounded-lg border border-green-500/40 hover:shadow-[0_0_10px_#00ff88]"
+                className="bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border)] hover:shadow-[0_0_10px_var(--shadow-color)]"
               >
                 {/* Header da tarefa */}
                 <div className="flex items-center justify-between">
@@ -193,7 +209,7 @@ export default function Home() {
                       );
                       setTasks(newTasks);
                     }}
-                    className="accent-green-500 w-4 h-4 mr-2"
+                    className="accent-[var(--border)] w-4 h-4 mr-2"
                   />
 
                   {/* Título */}
@@ -201,7 +217,7 @@ export default function Home() {
                     className="flex-1 flex items-center cursor-pointer select-none"
                     onClick={() => toggleExpand(key)}
                   >
-                    <span className={t.done ? "line-through text-green-600" : ""}>
+                    <span className={t.done ? "line-through text-[var(--primary-color)]" : ""}>
                       {t.title}
                     </span>
 
@@ -242,7 +258,7 @@ export default function Home() {
 
                 {/* Detalhes expandíveis */}
                 {expandedTaskKey === key && (
-                  <div className="mt-2 p-3 border-t border-green-500/20 text-green-300">
+                  <div className="mt-2 p-3 border-t border-[var(--border)] text-[var(--text-color)]">
                     <p className="mb-1">{t.description || "Sem descrição"}</p>
                   </div>
                 )}
@@ -252,7 +268,7 @@ export default function Home() {
 
 
             {todayTasks.length === 0 && (
-              <p className="text-center text-green-700 italic">
+              <p className="text-center text-[var(--primary-color)] italic">
                 Nenhuma tarefa para hoje 🎉
               </p>
             )}
@@ -260,12 +276,12 @@ export default function Home() {
         </div>
 
         {/* FUTURO */}
-        <div className="w-full max-w-2xl bg-black/70 border border-green-500/30 rounded-2xl p-6 shadow-[0_0_15px_#00ff88]">
-          <h2 className="text-xl text-green-400 font-bold mb-4">
+        <div className="w-full max-w-2xl border border-theme rounded-2xl p-6 mb-10 bg-card shadow-theme">
+          <h2 className="text-xl text-[var(--primary-color)] font-bold mb-4">
             📆 Tarefas Futuras
           </h2>
           {futureTasks.length === 0 && (
-            <p className="text-center text-green-700 italic">
+            <p className="text-center text-[var(--primary-color)] italic">
               Nenhuma tarefa futura definida...
             </p>
           )}
@@ -277,7 +293,7 @@ export default function Home() {
             }, {})
           ).map(([date, group]) => (
             <div key={date} className="mb-6">
-              <h3 className="text-green-300 mb-2">
+              <h3 className="text-[var(--primary-color)] mb-2">
                 📅 {formatDateForDisplay(date)}
               </h3>
               <ul className="space-y-2">
@@ -286,14 +302,14 @@ export default function Home() {
                   return (
                     <li
                       key={taskKey}
-                      className="bg-black/60 p-3 rounded-lg border border-green-500/40 hover:shadow-[0_0_10px_#00ff88]"
+                      className="bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border)] hover:shadow-[0_0_10px_var(--shadow-color)]"
                     >
                       <div className="flex items-center justify-between">
                       <div
                     className="flex-1 flex items-center cursor-pointer select-none"
                     onClick={() => toggleExpand(taskKey)}
                   >
-                    <span className={t.done ? "line-through text-green-600" : ""}>
+                    <span className={t.done ? "line-through text-[var(--primary-color)]" : ""}>
                       {t.title}
                     </span>
 
@@ -330,23 +346,9 @@ export default function Home() {
 
                       {/* Expansão */}
                       {expandedTaskKey === taskKey && (
-                        <div className="mt-3 p-3 bg-black/40 rounded-lg border border-green-500/20">
-                          <p className="text-green-200 text-sm">
+                        <div className="mt-3 p-3 bg-black/40 rounded-lg border border-[var(--border)]">
+                          <p className="text-[var(--text-color)] text-sm">
                             {t.description || "Sem descrição"}
-                          </p>
-                          <p className="text-green-400 text-xs mt-2">
-                            Prioridade:{" "}
-                            <span
-                              className={
-                                t.priority === "alta"
-                                  ? "text-red-400"
-                                  : t.priority === "media"
-                                  ? "text-yellow-400"
-                                  : "text-green-400"
-                              }
-                            >
-                              {t.priority}
-                            </span>
                           </p>
                         </div>
                       )}
