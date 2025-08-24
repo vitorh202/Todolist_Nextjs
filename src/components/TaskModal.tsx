@@ -97,18 +97,18 @@ export default function TaskModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={handleClose}>
       <div
-        className="w-full max-w-md rounded-xl border border-green-500/40 bg-gray-900 p-6 shadow-lg"
+        className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--bg-color)] p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-xl font-bold text-green-400">
+        <h2 className="mb-4 text-xl font-bold text-[var(--primary-color)]">
           {initialTask ? "Editar Tarefa" : "Nova Tarefa"}
         </h2>
 
         <label className="mb-3 block">
-          <span className="text-sm text-green-300">Título</span>
+          <span className="text-sm text-[var(--primary-color)]">Título</span>
           <input
             type="text"
-            className="mt-1 w-full rounded-lg border border-green-500/40 bg-black/70 p-2 text-green-200 outline-none focus:ring-2 focus:ring-green-400"
+            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Digite o título..."
@@ -116,9 +116,9 @@ export default function TaskModal({
         </label>
 
         <label className="mb-3 block">
-          <span className="text-sm text-green-300">Descrição</span>
+          <span className="text-sm text-[var(--primary-color)]">Descrição</span>
           <textarea
-            className="mt-1 w-full rounded-lg border border-green-500/40 bg-black/70 p-2 text-green-200 outline-none focus:ring-2 focus:ring-green-400"
+            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Detalhe sua tarefa..."
@@ -128,19 +128,19 @@ export default function TaskModal({
 
         <div className="mb-3 flex gap-3">
           <label className="flex-1">
-            <span className="text-sm text-green-300">Data</span>
+            <span className="text-sm text-[var(--primary-color)]">Data</span>
             <input
               type="date"
-              className="mt-1 w-full rounded-lg border border-green-500/40 bg-black/70 p-2 text-green-200 outline-none focus:ring-2 focus:ring-green-400"
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </label>
 
           <label className="flex-1">
-            <span className="text-sm text-green-300">Prioridade</span>
+            <span className="text-sm text-[var(--primary-color)]">Prioridade</span>
             <select
-              className="mt-1 w-full rounded-lg border border-green-500/40 bg-black/70 p-2 text-green-200 outline-none focus:ring-2 focus:ring-green-400"
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]"
               value={priority}
               onChange={(e) => setPriority(e.target.value as NewTask["priority"])}
             >
@@ -154,13 +154,13 @@ export default function TaskModal({
         <div className="mt-4 flex justify-end gap-3">
           <button
             onClick={handleClose}
-            className="rounded-lg bg-gray-700 px-4 py-2 text-green-300 transition hover:bg-gray-600"
+            className="rounded-lg bg-gray-700 px-4 py-2 text-[var(--alt-text)] transition hover:bg-gray-600"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="rounded-lg bg-green-600 px-4 py-2 font-bold text-black shadow-[0_0_10px_#00ff88] transition hover:bg-green-400"
+            className="rounded-lg bg-[var(--primary-color)] px-4 py-2 font-bold text-[var(--alt-text)] shadow-[var(--shadow-color)] transition hover:bg-[var(--primary-hover)]"
           >
             {initialTask ? "Salvar Alterações" : "Adicionar Tarefa"}
           </button>

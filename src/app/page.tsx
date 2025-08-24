@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import "@/styles/input-styles.css";
 import TaskModal from "@/components/TaskModal";
 
 // Modelo de tarefa
