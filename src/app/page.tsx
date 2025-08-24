@@ -53,8 +53,7 @@ export default function Home() {
   const futureTasks = tasks.filter((t) => t.date > formattedDate);
 
   const completedToday = todayTasks.filter((t) => t.done).length;
-  const progress =
-    todayTasks.length > 0 ? (completedToday / todayTasks.length) * 100 : 0;
+  const progress = todayTasks.length > 0 ? (completedToday / todayTasks.length) * 100 : 0;
 
   // controle de expandir tarefas -> agora usa uma "chave única"
   const [expandedTaskKey, setExpandedTaskKey] = useState<string | null>(null);
@@ -67,14 +66,33 @@ export default function Home() {
     useEffect(() => {
       const stored = localStorage.getItem("tasks");
       if (stored) {
-        const parsed: Task[] = JSON.parse(stored) as Task[]; // <-- define o tipo
-        const tasksWithDone: Task[] = parsed.map((t: Task) => ({
+        const parsed: Task[] = JSON.parse(stored) as Task[];
+    
+        // 1. Pega a data de hoje e zera as horas.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+    
+        const filteredTasks: Task[] = parsed.filter((task) => {
+          // 2. Cria a data da tarefa com base nas partes da string,
+          //    usando o fuso horário local.
+          const [year, month, day] = task.date.split('-').map(Number);
+          const taskDate = new Date(year, month - 1, day);
+    
+          // 3. Compara se a data da tarefa é maior ou igual à de hoje.
+          return taskDate.getTime() >= today.getTime();
+        });
+    
+        const tasksWithDone: Task[] = filteredTasks.map((t) => ({
           ...t,
           done: t.done ?? false
         }));
+    
         setTasks(tasksWithDone);
+        localStorage.setItem("tasks", JSON.stringify(tasksWithDone));
       }
     }, []);
+
+    // Salva permanente o tema
 
     useEffect(() => {
       document.documentElement.setAttribute("data-theme", theme);
