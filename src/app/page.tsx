@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import TaskModal from "@/components/TaskModal";
+import RecurringModal from "@/components/RecurringModal";
 
 // Modelo de tarefa
 type Task = {
@@ -11,6 +12,15 @@ type Task = {
   priority: "baixa" | "media" | "alta";
   done: boolean;
   date: string; // formato yyyy-mm-dd
+  recurringId?: string | null;
+};
+
+type RecurringTask = {
+  id: string;
+  title: string;
+  description: string;
+  priority: "baixa" | "media" | "alta";
+  weekday: number; // 0 = domingo, 1 = segunda, ... 6 = sábado
 };
 
 type Theme = "light" | "pink" | "dark" | "terminal";
@@ -31,6 +41,12 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  // const tarefas repetidas
+
+  const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([]);
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTask | null>(null);
 
 
 
@@ -104,6 +120,118 @@ export default function Home() {
       localStorage.setItem("tasks", JSON.stringify(tasks));
     }, [tasks]);
 
+    // carregamento das tarefas repetitivas
+
+        useEffect(() => {
+      const stored = localStorage.getItem("recurringTasks");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as RecurringTask[];
+          setRecurringTasks(parsed);
+        } catch {
+          setRecurringTasks([]);
+        }
+      }
+    }, []);
+
+    // salvar recorrentes sempre que mudarem
+      useEffect(() => {
+        localStorage.setItem("recurringTasks", JSON.stringify(recurringTasks));
+      }, [recurringTasks]);
+
+
+      // configurações das tarefas recorrentes
+        const toISODate = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    const syncRecurringToToday = () => {
+      const today = new Date();
+      const todayWeekday = today.getDay(); // 0..6
+      const todayDate = toISODate(today);
+
+      // ids de tasks já criadas dnesse dia
+      const existingRecurringIdsToday = new Set(
+        tasks.filter((t) => t.date === todayDate && t.recurringId).map((t) => t.recurringId!)
+      );
+
+      // descubra quais recorrentes se aplicam hoje e ainda não foram instanciadas
+      const toCreate = recurringTasks.filter(
+        (r) => r.weekday === todayWeekday && !existingRecurringIdsToday.has(r.id)
+      );
+
+      if (toCreate.length === 0) return;
+
+      const newInstances: Task[] = toCreate.map((r) => ({
+        id: Date.now().toString() + "-" + Math.random().toString(36).slice(2, 6),
+        title: r.title,
+        description: r.description,
+        priority: r.priority,
+        done: false,
+        date: todayDate,
+        recurringId: r.id,
+      }));
+      setTasks((prev) => {
+        const merged = [...prev, ...newInstances];
+        return merged;
+      });
+    };
+    //
+
+    useEffect(() => {
+      // hoje em yyyy-mm-dd (mesmo formato que toISODate)
+      const todayDate = toISODate(new Date());
+      const todayWeekday = new Date().getDay();
+    
+      // ids de recorrentes já instanciadas hoje
+      const instantiatedToday = new Set(
+        tasks
+          .filter((t) => t.date === todayDate && t.recurringId)
+          .map((t) => t.recurringId!)
+      );
+    
+      // verifica se existe pelo menos 1 recorrente do dia que ainda não foi instanciada
+      const needsSync = recurringTasks.some(
+        (r) => r.weekday === todayWeekday && !instantiatedToday.has(r.id)
+      );
+    
+      if (needsSync) {
+        // chama a função que já cria as instâncias
+        syncRecurringToToday();
+      }
+      // dependências: roda sempre que recurringTasks OU tasks mudarem
+    }, [recurringTasks, tasks]);
+
+    //Const de edição e criação das tarefas recorrentes
+
+    const addRecurring = (r: Omit<RecurringTask, "id">) => {
+      const newR: RecurringTask = { id: Date.now().toString(), ...r };
+      setRecurringTasks((prev) => [...prev, newR]);
+      // ao adicionar, sincronizamos para hoje imediatamente (caso se aplique)
+      // setTimeout para garantir que local state tenha sido atualizado
+      setTimeout(() => syncRecurringToToday(), 0);
+    };
+
+    // editar (mantém id)
+    const editRecurring = (updated: RecurringTask) => {
+      setRecurringTasks((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+
+      const todayDate = toISODate(new Date());
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.recurringId === updated.id && t.date === todayDate ? { ...t, title: updated.title, description: updated.description, priority: updated.priority } : t
+        )
+      );
+    };
+
+    const deleteRecurring = (id: string) => {
+      setRecurringTasks((prev) => prev.filter((r) => r.id !== id));
+    };
+
+
   return (
     <main className="min-h-screen bg-theme transition-colors duration-300 font-mono text-[var(--text-color)]">
       {/* AppBar */}
@@ -158,6 +286,21 @@ export default function Home() {
             }
             setIsAdding(false);
             setEditingTask(null);
+          }}
+        />
+
+        <RecurringModal
+          isOpen={isRecurringModalOpen}
+          onClose={() => { setIsRecurringModalOpen(false); setEditingRecurring(null); }}
+          initial={editingRecurring || undefined}
+          onSave={(payload) => {
+            if (editingRecurring) {
+              editRecurring({ id: editingRecurring.id, ...payload });
+            } else {
+              addRecurring(payload);
+            }
+            setIsRecurringModalOpen(false);
+            setEditingRecurring(null);
           }}
         />
 
@@ -376,6 +519,38 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+          {/* RECORRENTES */}
+            <div className="w-full max-w-2xl rounded-2xl p-6 mb-6" style={{ background: "var(--card-bg)", border: "1px solid var(--border)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold" style={{ color: "var(--primary-color)" }}>🔁 Tarefas Recorrentes</h2>
+                <div className="flex gap-2">
+                  <button onClick={() => { setEditingRecurring(null); setIsRecurringModalOpen(true); }} className="px-3 py-1 rounded-lg btn-theme">
+                    + Nova Recorrente
+                  </button>
+                </div>
+              </div>
+
+              {recurringTasks.length === 0 ? (
+                <p className="text-[var(--muted)] italic">Nenhuma tarefa recorrente definida.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {recurringTasks.map((r) => (
+                    <li key={r.id} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "transparent", borderRadius: 8 }}>
+                      <div>
+                        <div className="font-bold">{r.title} <span className="ml-2 text-xs px-2 py-0.5 rounded" style={{ background: "transparent", color: "var(--muted)" }}>{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][r.weekday]}</span></div>
+                        <div className="text-sm text-[var(--muted)]">{r.description}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => { setEditingRecurring(r); setIsRecurringModalOpen(true); }} className="text-blue-400">✏️</button>
+                        <button onClick={() => deleteRecurring(r.id)} className="text-red-400">✕</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
       </div>
     </main>
   );
