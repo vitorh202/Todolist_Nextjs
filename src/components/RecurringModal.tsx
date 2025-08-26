@@ -79,7 +79,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, initial }: Pro
 
           <label className="flex-1">
             <span className="text-sm text-[var(--muted)]">Prioridade</span>
-            <select value={priority} onChange={(e) => setPriority(e.target.value as any)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]">
+            <select value={priority} onChange={(e) => setPriority(e.target.value as RecurringTask["priority"])} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-color)] p-2 text-[var(--text-color)] outline-none focus:ring-2 focus:ring-[var(--primary-hover)]">
               <option value="baixa">Baixa</option>
               <option value="media">Média</option>
               <option value="alta">Alta</option>
