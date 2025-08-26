@@ -536,14 +536,16 @@ export default function Home() {
               ) : (
                 <ul className="space-y-2">
                   {recurringTasks.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "transparent", borderRadius: 8 }}>
+                    <li key={r.id} className="bg-[var(--bg-color)] p-3 rounded-lg border border-[var(--border)] hover:shadow-[0_0_10px_var(--shadow-color)]">
+                      <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-bold">{r.title} <span className="ml-2 text-xs px-2 py-0.5 rounded" style={{ background: "transparent", color: "var(--muted)" }}>{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][r.weekday]}</span></div>
-                        <div className="text-sm text-[var(--muted)]">{r.description}</div>
+                        <div className="font-bold text-[var(--text-color)]">Título: {r.title} <span className="ml-2 text-xs px-2 py-0.5 rounded bg-green-500/30 text-green-400">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][r.weekday]}</span></div>
+                        <div className="text-sm italic text-[var(--muted)]">{r.description}</div>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => { setEditingRecurring(r); setIsRecurringModalOpen(true); }} className="text-blue-400">✏️</button>
                         <button onClick={() => deleteRecurring(r.id)} className="text-red-400">✕</button>
+                      </div>
                       </div>
                     </li>
                   ))}
